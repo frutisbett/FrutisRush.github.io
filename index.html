@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Crystal Slots 3×2 – FRUTI & SOK</title>
+<link rel="icon" href="https://frutisrushbot.onrender.com/icon100.png">
+<meta property="og:image" content="https://frutisrushbot.onrender.com/preview.jpg">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: linear-gradient(135deg, #ff00c1 0%, #00f0ff 100%);
+  --accent1: #ffd700;
+  --accent2: #ff00c1;
+  --text: #ffffff;
+  --text2: #c0c0c0;
+}
+*{box-sizing:border-box;font-family:Inter;margin:0;padding:0;-webkit-user-select:none;user-select:none;}
+html,body{width:100%;height:100%;overflow:hidden;}
+body{background:var(--bg);background-size:400% 400%;animation:bgShift 8s ease infinite;color:var(--text);display:flex;justify-content:center;align-items:center;padding:2px;}
+@keyframes bgShift{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
+
+.slot-container{width:100vw;height:100vh;background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,255,255,0.9));border-radius:12px;border:2px solid rgba(255,255,255,0.8);padding:6px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.balance-bar{display:flex;gap:4px;}.item{background:rgba(0,0,0,0.7);padding:4px 6px;border-radius:8px;font-size:10px;border:1px solid rgba(255,255,255,0.2);}
+.val{font-weight:600;}.sok{color:var(--accent2);}
+.connect-btn{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;}
+
+.slots{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:3px;width:100%;height:28vh;min-height:120px;background:linear-gradient(135deg,#ff00c1 0%,#00f0ff 100%);background-size:400% 400%;animation:brightGradientShift 4s ease infinite;padding:6px;border-radius:8px;border:2px solid rgba(255,255,255,0.8);}
+@keyframes brightGradientShift{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
+.slot{background:linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,255,255,0.9));border:2px solid rgba(255,255,255,0.8);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:8vw;color:#333;text-shadow:1px 1px 2px rgba(255,255,255,0.8);transition:all .3s ease;position:relative;overflow:hidden;min-height:20px;}
+.slot.win{background:linear-gradient(135deg,#ffeaa7 0%,#fdcb6e 50%,#e17055 100%) !important;color:#2d3436 !important;border:2px solid #fff !important;box-shadow:0 0 20px rgba(253,203,110,0.9) !important;animation:winPulse 0.6s ease-in-out infinite alternate !important;z-index:10;transform:scale(1.03);}
+@keyframes winPulse{0%{transform:scale(1.03);box-shadow:0 0 20px rgba(253,203,110,0.9);}100%{transform:scale(1.06);box-shadow:0 0 30px rgba(253,203,110,1);}}
+
+.chips-row{display:flex;justify-content:center;gap:10px;margin:6px 0;}
+.pokerchip{width:60px;height:60px;border-radius:50%;border:2px solid #fff;cursor:pointer;transition:all .2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);}
+.pokerchip:hover{transform:scale(1.08) rotate(3deg);}
+.chip-20{background:linear-gradient(135deg,#ff7675,#fd79a8);}
+.chip-50{background:linear-gradient(135deg,#fdcb6e,#e17055);}
+.chip-100{background:linear-gradient(135deg,#00b894,#00cec9);}
+
+.spin-btn{width:100%;max-width:160px;margin:0 auto;display:block;background:linear-gradient(135deg,#00b894,#00cec9);color:white;border:none;border-radius:10px;padding:10px 0;font-size:16px;font-weight:bold;cursor:pointer;transition:all .2s ease;box-shadow:0 4px 12px rgba(0,184,148,0.4);}
+.spin-btn:active{transform:translateY(1px);}
+
+.ctrl{margin-top:6px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;}
+.btn{padding:8px 10px;font-size:10px;border-radius:8px;border:none;cursor:pointer;transition:all .2s ease;box-shadow:0 2px 6px rgba(0,0,0,0.3);}
+.btn-primary{background:linear-gradient(135deg,var(--accent1) 0%,#ffed4e 100%);color:#1a1a1a;font-weight:600;}
+.btn-secondary{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;}
+
+.slot.spinning::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.15) 50%,rgba(255,255,255,0) 100%);animation:shine 0.08s linear infinite;}
+@keyframes shine{0%{transform:translateY(-100%);}100%{transform:translateY(100%);}}
+.slot.stopping::before{animation:none;}
+
+.notify{position:fixed;top:12px;left:50%;transform:translateX(-50%) translateY(-100px);background:linear-gradient(135deg,var(--accent1),#ffed4e);color:#1a1a1a;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;z-index:3000;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:transform 0.3s ease;}
+.notify.show{transform:translateX(-50%) translateY(0);}
+
+.status-bar{background:rgba(0,0,0,0.7);padding:4px;border-radius:6px;text-align:center;margin-bottom:4px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,0.2);}
+.status-table{width:100%;color:var(--text);font-size:10px;}
+.status-table td{padding:2px;text-align:center;}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:4000;}
+.modal-content{background:linear-gradient(135deg,var(--accent1),#ffed4e);color:#1a1a1a;border-radius:12px;padding:12px;width:92%;max-width:360px;font-size:12px;line-height:1.3;max-height:70vh;overflow-y:auto;}
+.modal-close{float:right;font-size:18px;font-weight:bold;cursor:pointer;}
+.lines-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:6px 0;font-size:10px;}
+.lines-grid div{background:rgba(255,255,255,0.6);border-radius:4px;padding:4px;text-align:center;}
+
+.privacy{position:fixed;bottom:4px;right:4px;font-size:9px;color:var(--text2);text-decoration:underline;cursor:pointer;z-index:2000;}
+</style>
+</head>
+<body>
+<div class="slot-container">
+
+  <div class="status-bar" id="status">SPIN TO WIN!</div>
+
+  <div class="top-bar">
+    <div class="balance-bar">
+      <div class="item">FRUTI: <span id="bal" class="val">100000</span></div>
+      <div class="item">SOK: <span id="sok" class="val sok">0</span></div>
+      <div class="item">BET: <span id="betDisplay" class="val">0</span></div>
+      <div class="item">SPINS: <span id="spins" class="val">0</span></div>
+    </div>
+    <button id="connectBtn" class="connect-btn">🔗 TON</button>
+  </div>
+
+  <div class="slots" id="slots">
+    <div class="slot" id="slot0">🍒</div>
+    <div class="slot" id="slot1">🍋</div>
+    <div class="slot" id="slot2">🍊</div>
+    <div class="slot" id="slot3">🍉</div>
+    <div class="slot" id="slot4">🍇</div>
+    <div class="slot" id="slot5">🍓</div>
+  </div>
+
+  <div class="chips-row">
+    <img src="https://frutisrushbot.onrender.com/chip20.png" class="pokerchip chip-20" onclick="addBet(20)" alt="20">
+    <img src="https://frutisrushbot.onrender.com/chip50.png" class="pokerchip chip-50" onclick="addBet(50)" alt="50">
+    <img src="https://frutisrushbot.onrender.com/chip100.png" class="pokerchip chip-100" onclick="addBet(100)" alt="100">
+  </div>
+
+  <div class="status-bar">
+    <table class="status-table">
+      <tr>
+        <td id="message1">Money: 100000 FRUTI</td>
+        <td id="message2">Now Betting: 0 FRUTI</td>
+      </tr>
+    </table>
+  </div>
+
+  <button class="spin-btn" onclick="return gamble();"><span>SPIN</span></button>
+
+  <div class="ctrl">
+    <button id="autoBtn" class="btn btn-secondary">🔄 АВТО</button>
+    <button id="rulesBtn" class="btn btn-secondary">📋 ПРАВИЛА</button>
+    <button id="adBonusBtn" class="btn btn-primary">📺 +7000</button>
+    <button id="withdrawBtn" class="btn btn-primary">💎 SOK</button>
+  </div>
+
+  <!-- модалка правил -->
+  <div id="rulesModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeRulesModal()">&times;</span>
+      <h3>📋 Правила и линии</h3>
+      <p><b>11 выигрышных линий:</b></p>
+      <div class="lines-grid">
+        <div>1. [0,1,2] – верх</div>
+        <div>2. [3,4,5] – низ</div>
+        <div>3. [0,3] – лев столб</div>
+        <div>4. [1,4] – центр столб</div>
+        <div>5. [2,5] – прав столб</div>
+        <div>6. [0,4,5] – диаг ↘</div>
+        <div>7. [2,4,3] – диаг ↙</div>
+        <div>8. [0,4,2] – V-влево</div>
+        <div>9. [2,4,0] – V-вправо</div>
+        <div>10. [0,2,4] – треуг. home</div>
+        <div>11. [3,4,2] – треуг. away</div>
+      </div>
+      <p><b>Коэффициенты (FRUTI × bet):</b><br>
+      🍒×2 🍋×3 🍊×4 🍉×5 🍇×6 🍓×8 🍍×9 🥝×10 🍌×11 🥥×12 🎁×25 💎×30 ⭐×35 🃏×40 👑×80 💰×100 👻×15<br>
+      <b>Анти-бонусы:</b> 💀×0.5 🕷️×0.7 🐍×0.8 ⚡×0.9 💔×0.6 (отнимают % от ставки)</p>
+      <p><b>FRUTI → SOK:</b> 10 000 FRUTI = 1 SOK<br>
+      <b>Минимум к выводу:</b> 50 000 FRUTI (5 SOK)</p>
+    </div>
+  </div>
+
+  <!-- модалка вывода -->
+  <div id="withdrawModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeWithdrawModal()">&times;</span>
+      <h3>💎 Вывод SOK</h3>
+      <p>Баланс: <span id="withdrawBalance"></span> FRUTI</p>
+      <p>Доступно: <span id="withdrawAvailable"></span> SOK</p>
+      <input id="withdrawAmount" type="number" placeholder="Сколько SOK" min="1" style="width:100%;padding:6px;margin:6px 0;">
+      <button onclick="confirmWithdraw()" class="spin-btn" style="font-size:12px;">Вывести</button>
+    </div>
+  </div>
+
+  <!-- политика -->
+  <div class="privacy" onclick="showPrivacy()">Политика</div>
+
+</div>
+
+<script>
+/* ---------- CONFIG ---------- */
+const betSteps = [10,25,50,100,250,500,1000];
+const symbols = ['🍒','🍋','🍊','🍉','🍇','🍓','🍍','🥝','🍌','🥥','🎁','💎','⭐','🃏','👑','💰','💀','🕷️','🐍','⚡','💔','👻'];
+const paytable = { '🍒': 2, '🍋': 3, '🍊': 4, '🍉': 5, '🍇': 6, '🍓': 8, '🍍': 9, '🥝': 10, '🍌': 11, '🥥': 12, '🎁': 25, '💎': 30, '⭐': 35, '🃏': 40, '👑': 80, '💰': 100, '💀': 0.5, '🕷️': 0.7, '🐍': 0.8, '⚡': 0.9, '💔': 0.6, '👻': 15 };
+const antiPaytable = { '💀': 0.5, '🕷️': 0.7, '🐍': 0.8, '⚡': 0.9, '💔': 0.6 };
+const winningLines = [
+  [0,1,2],      // 1 top
+  [3,4,5],      // 2 bottom
+  [0,3],        // 3 left col
+  [1,4],        // 4 center col
+  [2,5],        // 5 right col
+  [0,4,5],      // 6 diag down right
+  [2,4,3],      // 7 diag down left
+  [0,4,2],      // 8 V left
+  [2,4,0],      // 9 V right
+  [0,2,4],      // 10 triangle home
+  [3,4,2]       // 11 triangle away
+];
+
+let balance = 100000;   // FRUTI
+let sok = 0;            // on-chain SOK
+let betFRUTI = 0;
+let spinning = false;
+let autoSpinning = false;
+let spinCount = 0;
+let tc = null;
+let connected = false;
+let userAddr = "";
+
+/* ---------- УНИКАЛЬНАЯ СИСТЕМА КОНВЕРТАЦИИ ---------- */
+const FRUTI_PER_SOK = 10000;      // 10 000 FRUTI = 1 SOK
+const MIN_WITHDRAW_FRUTI = 50000; // минимум к выводу
+
+/* ---------- TELEGRAM WEB APP + MAIN BUTTON ---------- */
+window.addEventListener('load', () => {
+  if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+    // Main Button для возврата
+    window.Telegram.WebApp.MainButton.setText("Назад").show();
+    window.Telegram.WebApp.MainButton.onClick(() => {
+      window.Telegram.WebApp.close();
+    });
+    console.log("Telegram Web App initialized");
+  }
+  // TonConnect
+  tc = new TonConnectSDK.TonConnect({ manifestUrl: "https://frutisrushbot.onrender.com/tonconnect-manifest.json" });
+  tc.onStatusChange(s => {
+    connected = !!s;
+    userAddr = s?.account?.address ?? "";
+    document.getElementById("connectBtn").textContent = connected ? "✅ TON" : "🔗 TON";
+    if (connected) loadOnChainBal();
+  });
+  document.getElementById("connectBtn").onclick = () => tc.openModal();
+  document.getElementById("withdrawBtn").onclick = () => openWithdrawModal();
+});
+
+/* ---------- BACKEND API (ваш домен) ---------- */
+async function api(path, body = {}) {
+  const res = await fetch("https://frutisrushbot.onrender.com" + path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Init-Data": window.Telegram?.WebApp?.initData || "" },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+async function loadOnChainBal() {
+  const { sokOnChain } = await api("/balance", { addr: userAddr });
+  if (typeof sokOnChain === "number") { sok = sokOnChain; updateUI(); }
+}
+async function mintSokOnChain(amountSOK) {
+  const { ok, tx, error } = await api("/mint-sok", { userAddr, amountSOK });
+  return { ok, tx, error };
+}
+
+/* ---------- UI ---------- */
+function updateUI() {
+  document.getElementById("bal").textContent = balance;
+  document.getElementById("sok").textContent = sok;
+  document.getElementById("betDisplay").textContent = betFRUTI;
+  document.getElementById("message1").textContent = "Money: " + balance + " FRUTI";
+  document.getElementById("message2").textContent = "Now Betting: " + betFRUTI + " FRUTI";
+  document.getElementById("spins").textContent = spinCount;
+}
+function updateStatus(text) {
+  document.getElementById('status').textContent = text;
+}
+function notify(title, text) {
+  const n = document.createElement("div"); n.className = "notify";
+  n.innerHTML = `<b>${title}</b><br><span style="font-size:12px;color:var(--text2)">${text}</span>`;
+  document.body.appendChild(n); setTimeout(() => n.classList.add("show"), 10);
+  setTimeout(() => { n.classList.remove("show"); setTimeout(() => n.remove(), 300) }, 3000);
+}
+
+/* ---------- STAKE ---------- */
+function addBet(val) {
+  if (spinning) return;
+  if (val + betFRUTI > balance) { updateStatus("Not enough FRUTI!"); return; }
+  betFRUTI += val;
+  updateUI();
+  updateStatus("SPIN TO WIN!");
+}
+
+/* ---------- SPIN ---------- */
+async function gamble() {
+  if (spinning || betFRUTI === 0) { updateStatus("Place your bet!"); return; }
+  spinning = true;
+  balance -= betFRUTI;
+  spinCount++;
+  updateUI();
+  updateStatus("SPINNING");
+  const slots = document.querySelectorAll('.slot');
+  const targets = Array.from({ length: 6 }, () => Math.floor(Math.random() * symbols.length));
+  await startColumnSpinning(slots, targets);
+  const win = checkWin(slots);
+  if (win > 0) {
+    balance += win;
+    updateStatus("YOU WIN!");
+    showWinBanner(win);
+  } else {
+    updateStatus("YOU LOSE!");
+  }
+  spinning = false;
+  if (autoSpinning && balance >= betFRUTI) setTimeout(gamble, 1500);
+}
+
+async function startColumnSpinning(slots, targets) {
+  const promises = [];
+  for (let i = 0; i < 6; i++) promises.push(spinSingleSlot(slots[i], targets[i]));
+  await Promise.all(promises);
+}
+
+function spinSingleSlot(slotEl, target) {
+  return new Promise(resolve => {
+    let counter = 0;
+    const numChanges = 7 + Math.floor(Math.random() * 4);
+    const interval = setInterval(() => {
+      counter++;
+      slotEl.classList.add('spinning');
+      slotEl.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      if (counter >= numChanges) {
+        clearInterval(interval);
+        slotEl.classList.remove('spinning');
+        slotEl.classList.add('stopping');
+        slotEl.textContent = symbols[target];
+        setTimeout(() => {
+          slotEl.classList.remove('stopping');
+          resolve();
+        }, 300);
+      }
+    }, 50);
+  });
+}
+
+/* ---------- WIN CHECK ---------- */
+function checkWin(slots) {
+  const values = Array.from(slots).map(s => s.textContent);
+  let totalWin = 0;
+  slots.forEach(slot => slot.classList.remove('win'));
+  // анти-бонусы
+  for (const line of winningLines) {
+    const seg = line.map(i => values[i]);
+    const antiBase = seg.find(s => antiPaytable[s]);
+    if (antiBase && seg.every(s => antiPaytable[s])) {
+      const loss = Math.round(betFRUTI * (1 - antiPaytable[antiBase]));
+      balance -= loss;
+      showMessage(`😈 Анти-бонус! -${loss} FRUTI`);
+      line.forEach(i => slots[i].classList.add('win'));
+      updateUI();
+      return 0;
+    }
+  }
+  // обычные выигрыши
+  for (const line of winningLines) {
+    const seg = line.map(i => values[i]);
+    let base = null;
+    for (const s of seg) if (s !== '👻') { base = s; break; }
+    if (!base) base = '🍒';
+    if (seg.every(s => s === base || s === '👻')) {
+      const win = paytable[base] * betFRUTI;
+      totalWin += win;
+      line.forEach(i => slots[i].classList.add('win'));
+    }
+  }
+  return totalWin;
+}
+
+function showWinBanner(amount) {
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#ffeaa7,#fdcb6e);color:#2d3436;padding:16px 24px;border-radius:10px;font-size:16px;font-weight:bold;z-index:2000;box-shadow:0 10px 20px rgba(255,215,0,0.6);text-align:center;border:2px solid #fff;';
+  banner.innerHTML = '🎉 YOU WIN!<br><span style="font-size:18px;">+' + amount + ' FRUTI</span>';
+  document.body.appendChild(banner);
+  setTimeout(() => banner.remove(), 2000);
+}
+function showMessage(text) {
+  const msg = document.createElement('div');
+  msg.style.cssText = 'position:fixed;top:18%;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ff7675,#e17055);color:#fff;padding:10px 16px;border-radius:6px;font-size:12px;font-weight:bold;z-index:1999;box-shadow:0 6px 15px rgba(255,118,117,0.6);text-align:center;border:1px solid #fff;';
+  msg.textContent = text;
+  document.body.appendChild(msg);
+  setTimeout(() => msg.remove(), 1500);
+}
+
+/* ---------- BUTTONS ---------- */
+document.getElementById('autoBtn').onclick = () => {
+  autoSpinning = !autoSpinning;
+  document.getElementById('autoBtn').textContent = autoSpinning ? '⏹️ СТОП' : '🔄 АВТО';
+  if (autoSpinning && balance >= betFRUTI) gamble();
+};
+document.getElementById('rulesBtn').onclick = () => { document.getElementById('rulesModal').style.display = 'flex'; };
+function closeRulesModal() { document.getElementById('rulesModal').style.display = 'none'; }
+document.getElementById('adBonusBtn').onclick = () => watchAdForBonus();
+
+/* ---------- ADVERTISEMENT ---------- */
+function watchAdForBonus() {
+  if (!window.Telegram || !window.Telegram.WebApp || !window.Telegram.WebApp.showRewardedAd) {
+    showAdSimulation(); return;
+  }
+  window.Telegram.WebApp.showRewardedAd()
+    .then(() => {
+      balance += 7000; updateUI(); notify("📺 Реклама просмотрена!", "+7000 FRUTI");
+    })
+    .catch(() => notify("Реклама не загрузилась", ""));
+}
+function showAdSimulation() {
+  balance += 7000; updateUI(); notify("📺 Бонус за рекламу", "+7000 FRUTI");
+}
+
+/* ---------- WITHDRAW SOK ---------- */
+function openWithdrawModal() {
+  const available = Math.floor(balance / FRUTI_PER_SOK);
+  document.getElementById('withdrawBalance').textContent = balance;
+  document.getElementById('withdrawAvailable').textContent = available;
+  document.getElementById('withdrawAmount').value = '';
+  document.getElementById('withdrawModal').style.display = 'flex';
+}
+function closeWithdrawModal() { document.getElementById('withdrawModal').style.display = 'none'; }
+async function confirmWithdraw() {
+  const amount = parseInt(document.getElementById('withdrawAmount').value);
+  if (!amount || amount <= 0) { notify("Введите сумму", ""); return; }
+  const requiredFRUTI = amount * FRUTI_PER_SOK;
+  if (balance < requiredFRUTI) { notify("Недостаточно FRUTI", ""); return; }
+  if (requiredFRUTI < MIN_WITHDRAW_FRUTI) { notify(`Минимум ${MIN_WITHDRAW_FRUTI} FRUTI`, ""); return; }
+  if (!connected || !userAddr) { notify("Подключите TON кошелёк", ""); return; }
+  balance -= requiredFRUTI;
+  updateUI();
+  closeWithdrawModal();
+  notify("Заявка на вывод", `${amount} SOK отправляется...`);
+  const { ok, tx, error } = await mintSokOnChain(amount);
+  if (ok) {
+    notify("✅ Успешно!", `Транзакция ${tx.slice(0, 8)}...`);
+    sok += amount;
+    updateUI();
+  } else {
+    notify("❌ Ошибка", error);
+    balance += requiredFRUTI; // возврат
+    updateUI();
+  }
+}
+
+/* ---------- STORAGE ---------- */
+window.addEventListener('beforeunload', () => {
+  localStorage.setItem('cs32_balance', balance);
+  localStorage.setItem('cs32_sok', sok);
+  localStorage.setItem('cs32_bet', betFRUTI);
+  localStorage.setItem('cs32_spins', spinCount);
+});
+window.addEventListener('load', () => {
+  balance = parseInt(localStorage.getItem('cs32_balance')) || 100000;
+  sok = parseInt(localStorage.getItem('cs32_sok')) || 0;
+  betFRUTI = parseInt(localStorage.getItem('cs32_bet')) || 0;
+  spinCount = parseInt(localStorage.getItem('cs32_spins')) || 0;
+  updateUI();
+});
+
+/* ---------- PRIVACY ---------- */
+function showPrivacy() {
+  window.Telegram.WebApp.openLink("https://frutisrushbot.onrender.com/privacy.html");
+}
+
+/* ---------- INIT ---------- */
+updateUI();
+</script>
+</body>
+</html> 
